@@ -16,14 +16,12 @@ class _LoginState extends State<Login> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isLoading = false; // Status untuk menunjukkan loading ketika login.
-  bool _isPasswordVisible =
-      false; // Status untuk mengontrol visibilitas password.
+  bool _isPasswordVisible = false; // Status untuk mengontrol visibilitas password.
 
   // Fungsi untuk menangani proses login
   Future<void> _login() async {
     setState(() {
-      _isLoading =
-          true; // Tampilkan indikator loading saat proses login berjalan.
+      _isLoading = true; // Tampilkan indikator loading saat proses login berjalan.
     });
 
     // Mengambil teks dari input email dan password.
@@ -51,7 +49,7 @@ class _LoginState extends State<Login> {
         _showSnackBar('Login berhasil!');
         // Arahkan pengguna ke halaman Produk.
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => Produk()),
+          MaterialPageRoute(builder: (context) => const Produk()),
         );
       } else {
         // Jika gagal, tampilkan pesan kesalahan.
@@ -225,7 +223,7 @@ class _LoginState extends State<Login> {
                     ),
                   ),
                   child: _isLoading
-                      ? CircularProgressIndicator(
+                      ? const CircularProgressIndicator(
                           color: Colors.white) // Indikator loading.
                       : Text(
                           "Login",

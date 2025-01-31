@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ukk_coba/history.dart';
 import 'add_produk.dart'; // Pastikan untuk mengimpor halaman lain jika diperlukan
 import 'pesanan.dart'; // Pastikan untuk mengimpor halaman lain jika diperlukan
 import 'profile.dart'; // Pastikan untuk mengimpor halaman lain jika diperlukan
@@ -25,79 +26,71 @@ class _ProdukState extends State<Produk> {
 
   Future<void> _fetchProduk() async {
     try {
+      print('Fetching produk...');
       final response = await supabase
           .from('produk')
           .select('*')
           .order('produk_id', ascending: true);
 
-      print('Fetch Produk Response: $response'); // Debugging
-
+      print('Response: $response');
       if (response != null) {
         setState(() {
           produk = List<Map<String, dynamic>>.from(response);
-          // Pastikan data produk tetap terurut berdasarkan ID
           produk.sort((a, b) => a['produk_id'].compareTo(b['produk_id']));
         });
       } else {
         _showSnackBar('Gagal memuat data produk.');
       }
     } catch (e) {
+      print('Error fetching produk: $e');
       _showSnackBar('Terjadi kesalahan: $e');
     }
   }
 
+  // Fungsi untuk mengedit produk di database
   Future<void> _editProduk(int id, String nama, double harga, int stok) async {
     try {
-      final response = await supabase.from('produk').update({
+      await supabase.from('produk').update({
         'nama_produk': nama,
         'harga': harga,
         'stok': stok,
       }).eq('produk_id', id);
 
-      print('Edit Produk Response: $response'); // Debugging
-
-      if (response == null ) {
-        setState(() {
-          final index = produk.indexWhere((p) => p['produk_id'] == id);
-          if (index != -1) {
-            produk[index] = {
-              'produk_id': id,
-              'nama_produk': nama,
-              'harga': harga,
-              'stok': stok,
-            };
-          }
-        });
-        _showSnackBar('Produk berhasil diperbarui!');
-      } else {
-        _showSnackBar('Gagal memperbarui produk.');
-      }
+      setState(() {
+        final index = produk.indexWhere((p) => p['produk_id'] == id);
+        if (index != -1) {
+          produk[index] = {
+            'produk_id': id,
+            'nama_produk': nama,
+            'harga': harga,
+            'stok': stok,
+          };
+        }
+      });
+      _showSnackBar('Produk berhasil diperbarui!');
     } catch (e) {
       _showSnackBar('Terjadi kesalahan: $e');
     }
   }
 
+  // Fungsi untuk menghapus produk dari database
   Future<void> _deleteProduk(int id) async {
     try {
-      final response =
-          await supabase.from('produk').delete().eq('produk_id', id);
+      await supabase.from('detail_penjualan').delete().eq('produk_id', id);
+      await supabase.from('produk').delete().eq('produk_id', id);
 
-      print('Delete Produk Response: $response'); // Debugging
+      setState(() {
+        produk.removeWhere((p) => p['produk_id'] == id);
+      });
 
-      if (response == null ) {
-        setState(() {
-          produk.removeWhere((p) => p['produk_id'] == id);
-        });
-        _showSnackBar('Produk berhasil dihapus!');
-      } else {
-        _showSnackBar('Gagal menghapus produk.');
-      }
+      _showSnackBar('Produk berhasil dihapus!');
     } catch (e) {
       _showSnackBar('Terjadi kesalahan: $e');
     }
   }
 
   void _showSnackBar(String message) {
+    //Fungsi untuk menampilkan SnackBar dengan pesan tertentu.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -231,15 +224,6 @@ class _ProdukState extends State<Produk> {
             color: const Color(0xFF074799),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined,
-                color: Color(0xFF074799)),
-            onPressed: () {
-              // Aksi notifikasi
-            },
-          ),
-        ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -340,7 +324,13 @@ class _ProdukState extends State<Produk> {
               MaterialPageRoute(builder: (context) => const Pesanan()),
             );
             break;
-          case 2: // Profil
+          case 2: // Riwayat
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const Riwayat()),
+            );
+            break;
+          case 3: // Profil
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const ProfilPage()),
@@ -358,6 +348,10 @@ class _ProdukState extends State<Produk> {
         BottomNavigationBarItem(
           icon: Icon(Icons.shopping_bag_outlined),
           label: 'Pesanan',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.history_outlined),
+          label: 'Riwayat',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),

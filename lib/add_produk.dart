@@ -16,13 +16,15 @@ class _AddProdukState extends State<AddProduk> {
 
   final SupabaseClient supabase = Supabase.instance.client;
 
-  Future<void> createProduk(String name, String price, String stock) async {
+  Future<void> createProduk(String name, double price, String stock) async {
     try {
       await supabase.from('produk').insert({
         'nama_produk': name,
         'harga': price,
-        'stok': int.parse(stock), // Pastikan stok berupa integer
+        'stok': int.parse(stock),
       });
+
+      print('Nama: $name, Harga: $price, Stok: $stock');
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Produk berhasil ditambahkan')),
@@ -139,7 +141,7 @@ class _AddProdukState extends State<AddProduk> {
                     if (name.isNotEmpty &&
                         price.isNotEmpty &&
                         stock.isNotEmpty) {
-                      await createProduk(name, price, stock);
+                      await createProduk(name, double.parse(price), stock);
 
                       // Bersihkan input field
                       _nameController.clear();
