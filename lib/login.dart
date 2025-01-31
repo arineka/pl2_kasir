@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
-import 'package:ukk_coba/dashboard.dart';
+import 'package:google_fonts/google_fonts.dart'; // Untuk menggunakan font khusus dari Google Fonts.
+import 'package:supabase_flutter/supabase_flutter.dart'; // Library Supabase untuk autentikasi.
+import 'package:ukk_coba/produk.dart'; // Halaman yang akan dituju setelah login berhasil.
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -11,88 +11,82 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+  // Controller untuk mengelola input email dan password
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isLoading = false;
-  bool _isPasswordVisible = false;
 
+  bool _isLoading = false; // Status untuk menunjukkan loading ketika login.
+  bool _isPasswordVisible =
+      false; // Status untuk mengontrol visibilitas password.
+
+  // Fungsi untuk menangani proses login
   Future<void> _login() async {
     setState(() {
-      _isLoading = true;
+      _isLoading =
+          true; // Tampilkan indikator loading saat proses login berjalan.
     });
 
+    // Mengambil teks dari input email dan password.
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
+    // Validasi awal, pastikan input tidak kosong.
     if (email.isEmpty || password.isEmpty) {
       _showSnackBar('Email dan Password wajib diisi!');
       setState(() {
-        _isLoading = false;
+        _isLoading = false; // Hentikan loading jika input tidak valid.
       });
       return;
     }
 
     try {
+      // Proses autentikasi menggunakan Supabase.
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
       if (response.session != null) {
+        // Jika login berhasil, tampilkan pesan sukses.
         _showSnackBar('Login berhasil!');
-        // Arahkan ke halaman utama
+        // Arahkan pengguna ke halaman Produk.
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => Dashboard()),
+          MaterialPageRoute(builder: (context) => Produk()),
         );
       } else {
+        // Jika gagal, tampilkan pesan kesalahan.
         _showSnackBar('Login gagal. Periksa email dan password Anda!');
       }
     } catch (error) {
+      // Jika ada error dalam proses login, tampilkan pesan error.
       _showSnackBar('Error: ${error.toString()}');
     } finally {
+      // Hentikan indikator loading setelah proses selesai.
       setState(() {
         _isLoading = false;
       });
     }
   }
 
+  // Fungsi untuk menampilkan SnackBar dengan pesan tertentu.
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  // Fungsi untuk menampilkan dialog error
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Error"),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text("Tutup"),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.white, // Warna latar belakang layar.
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24.0), // Jarak konten dari tepi layar.
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 50),
-              // Judul Halaman
+              // Teks judul halaman login.
               Text(
                 "Selamat Datang",
                 style: GoogleFonts.poppins(
@@ -102,49 +96,57 @@ class _LoginState extends State<Login> {
                 ),
               ),
               const SizedBox(height: 5),
+              // Penjelasan singkat tentang halaman login.
               RichText(
-                  text: TextSpan(children: <InlineSpan>[
-                TextSpan(
-                  text: 'Halaman Login ',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey,
-                  ),
+                //agar teks bisa berwarna
+                text: TextSpan(
+                  children: <InlineSpan>[
+                    TextSpan(
+                      text: 'Halaman Login ',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    TextSpan(
+                      text: 'Kasir',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
                 ),
-                TextSpan(
-                  text: 'Kasir',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black,
-                  ),
-                )
-              ])),
+              ),
               const SizedBox(height: 50),
-              // Label Username
+              // Label untuk input username.
               Text(
-                "Username",
+                "Email",
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF074799),
                 ),
               ),
-              // const SizedBox(height: 1),
-              // Input Username
+              // Input field untuk username.
               TextField(
-                controller: _emailController,
+                controller:
+                    _emailController, // Menggunakan controller untuk input email.
                 decoration: InputDecoration(
-                  prefixIcon:
-                      const Icon(Icons.person, color: Color(0xFF074799)),
-                  hintText: "masukkan username",
+                  prefixIcon: const Icon(
+                    Icons.person,
+                    color: Color(0xFF074799),
+                  ), // Ikon di sebelah kiri input.
+                  hintText: "masukkan email", // Placeholder untuk input.
                   hintStyle: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     color: Colors.grey,
                   ),
                   border: const UnderlineInputBorder(
+                    //garis dibawah input username
                     borderSide: BorderSide(color: Colors.grey),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
@@ -154,7 +156,7 @@ class _LoginState extends State<Login> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Label Password
+              // Label untuk input password.
               Text(
                 "Password",
                 style: GoogleFonts.poppins(
@@ -163,34 +165,40 @@ class _LoginState extends State<Login> {
                   color: const Color(0xFF074799),
                 ),
               ),
-              // const SizedBox(height: 8),
-              // Input Password
+              // Input field untuk password.
               TextField(
-                controller: _passwordController,
-                obscureText: !_isPasswordVisible, // Menyesuaikan visibilitas
+                controller:
+                    _passwordController, // Menggunakan controller untuk input password.
+                obscureText:
+                    !_isPasswordVisible, // Mengontrol visibilitas teks password.
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.lock, color: Color(0xFF074799)),
+                  prefixIcon: const Icon(
+                    Icons.lock,
+                    color: Color(0xFF074799),
+                  ), // Ikon di sebelah kiri input.
                   suffixIcon: IconButton(
                     icon: Icon(
                       _isPasswordVisible
                           ? Icons.visibility
-                          : Icons.visibility_off,
+                          : Icons
+                              .visibility_off, // Ikon mata untuk visibilitas password.
                       color: const Color(0xFF074799),
                     ),
                     onPressed: () {
                       setState(() {
                         _isPasswordVisible =
-                            !_isPasswordVisible; // Toggle visibilitas
+                            !_isPasswordVisible; // Toggle visibilitas password.
                       });
                     },
                   ),
-                  hintText: "masukkan password",
+                  hintText: "masukkan password", // Placeholder untuk input.
                   hintStyle: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     color: Colors.grey,
                   ),
                   border: const UnderlineInputBorder(
+                    //garis dibawah input password
                     borderSide: BorderSide(color: Colors.grey),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
@@ -200,96 +208,33 @@ class _LoginState extends State<Login> {
                 ),
               ),
               const SizedBox(height: 70),
-              // Tombol Masuk
+              // Tombol login.
               SizedBox(
-                width: double.infinity,
+                width: double.infinity, // Membuat tombol memenuhi lebar layar.
                 child: ElevatedButton(
-                  onPressed:
-                      _isLoading ? null : () => _login(), // Ubah ke callback
+                  onPressed: _isLoading
+                      ? null
+                      : () =>
+                          _login(), // Jalankan fungsi login jika tidak loading.
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF074799),
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(
+                          28), // Membuat tombol melengkung.
                     ),
                   ),
                   child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
+                      ? CircularProgressIndicator(
+                          color: Colors.white) // Indikator loading.
                       : Text(
-                          "Masuk",
+                          "Login",
                           style: GoogleFonts.poppins(
                             fontSize: 24,
                             fontWeight: FontWeight.w500,
                             color: Colors.white,
                           ),
                         ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Center(
-                child: RichText(
-                  text: TextSpan(
-                    children: <InlineSpan>[
-                      TextSpan(
-                        text: 'Tidak punya akun ? ',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black,
-                        ),
-                      ),
-                      TextSpan(
-                        text: 'Daftar sekarang',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: const Color(0xFF074799),
-                        ),
-                        // recognizer: TapGestureRecognizer()
-                        //   ..onTap = () {
-                        //     Navigator.push(
-                        //       context,
-                        //       MaterialPageRoute(
-                        //         builder: (context) => const Dashboard(),
-                        //       ),
-                        //     );
-                        //   },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 100),
-              // Divider dengan teks
-              Row(
-                children: [
-                  const Expanded(child: Divider(color: Colors.grey)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      "Atau masuk dengan",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0xFF074799),
-                      ),
-                    ),
-                  ),
-                  const Expanded(child: Divider(color: Colors.grey)),
-                ],
-              ),
-              const SizedBox(height: 5),
-              // Logo Google
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    // Tambahkan aksi login dengan Google di sini
-                  },
-                  child: Image.asset(
-                    'asset/image/asset_google.png', // Pastikan file ini ada di folder assets
-                    width: 50,
-                  ),
                 ),
               ),
             ],
@@ -301,6 +246,7 @@ class _LoginState extends State<Login> {
 
   @override
   void dispose() {
+    // Membersihkan controller untuk menghindari kebocoran memori.
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
