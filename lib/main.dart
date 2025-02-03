@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart'; // Library Flutter.
 import 'package:supabase_flutter/supabase_flutter.dart'; // Library Supabase.
-import 'package:ukk_coba/history.dart';
 import 'package:ukk_coba/login.dart';
 import 'package:ukk_coba/produk.dart';
+// import 'package:ukk_coba/history.dart';
+// import 'package:ukk_coba/produk.dart';
 
 // Fungsi utama aplikasi.
 Future<void> main() async {
@@ -24,10 +25,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    final user = Supabase.instance.client.auth.currentUser;
+    return MaterialApp(
       debugShowCheckedModeBanner: false, // Menyembunyikan banner debug.
       title: 'Flutter Demo', // Judul aplikasi.
-      home: Login(), // Halaman awal aplikasi.
+      home: user != null ? const Produk() : const Login(), // Halaman awal aplikasi.
     );
   }
 }

@@ -2,21 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ukk_coba/history.dart';
-import 'add_produk.dart'; // Pastikan untuk mengimpor halaman lain jika diperlukan
+import 'package:ukk_coba/login.dart';
 import 'pesanan.dart'; // Pastikan untuk mengimpor halaman lain jika diperlukan
 import 'profile.dart'; // Pastikan untuk mengimpor halaman lain jika diperlukan
+import 'bottomnavbar.dart';
+
+class FlutterVizBottomNavigationBarModel {
+  final IconData icon;
+  final String label;
+
+  FlutterVizBottomNavigationBarModel({
+    required this.icon,
+    required this.label,
+  });
+}
 
 class Produk extends StatefulWidget {
   const Produk({super.key});
 
   @override
-  State<Produk> createState() => _ProdukState();
+  _ProdukState createState() => _ProdukState();
 }
 
 class _ProdukState extends State<Produk> {
   int _selectedIndex = 0;
   final SupabaseClient supabase = Supabase.instance.client;
   List<Map<String, dynamic>> produk = [];
+  List<Map<String, dynamic>> filteredProduk =
+      []; // List untuk menyimpan produk yang difilter
+  String searchQuery = ''; // Variabel untuk menyimpan query pencarian
 
   @override
   void initState() {
@@ -36,6 +50,7 @@ class _ProdukState extends State<Produk> {
       if (response != null) {
         setState(() {
           produk = List<Map<String, dynamic>>.from(response);
+          filteredProduk = produk; // Awalnya semua produk ditampilkan
           produk.sort((a, b) => a['produk_id'].compareTo(b['produk_id']));
         });
       } else {
@@ -43,6 +58,24 @@ class _ProdukState extends State<Produk> {
       }
     } catch (e) {
       print('Error fetching produk: $e');
+      _showSnackBar('Terjadi kesalahan: $e');
+    }
+  }
+
+  Future<void> _addProduct(String nama, double harga, int stok) async {
+    try {
+      final response = await supabase.from('produk').insert({
+        'nama_produk': nama,
+        'harga': harga,
+        'stok': stok,
+      }).select();
+
+      if (response != null) {
+        _showSnackBar('Produk berhasil ditambahkan!');
+      } else {
+        _showSnackBar('Gagal menambahkan produk.');
+      }
+    } catch (e) {
       _showSnackBar('Terjadi kesalahan: $e');
     }
   }
@@ -99,6 +132,96 @@ class _ProdukState extends State<Produk> {
     );
   }
 
+  void _showAddProductDialog() {
+    final _formKey =
+        GlobalKey<FormState>(); // Tambahkan GlobalKey untuk validasi
+    final TextEditingController namaController = TextEditingController();
+    final TextEditingController hargaController = TextEditingController();
+    final TextEditingController stokController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Tambah Produk'),
+          content: Form(
+            key: _formKey, // Gunakan form key
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: namaController,
+                  decoration: const InputDecoration(labelText: 'Nama Produk'),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Nama produk tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: hargaController,
+                  decoration: const InputDecoration(labelText: 'Harga'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Harga harus diisi';
+                    } else if (double.tryParse(value) == null) {
+                      return 'Harga harus berupa angka';
+                    } else if (double.tryParse(value)! <= 0) {
+                      return 'Harga harus lebih besar dari 0';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: stokController,
+                  decoration: const InputDecoration(labelText: 'Stok'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Stok harus diisi';
+                    } else if (double.tryParse(value) == null) {
+                      return 'Stok harus berupa angka';
+                    } else if (double.tryParse(value)! <= 0) {
+                      return 'Stok harus lebih besar dari 0';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  final String nama = namaController.text.trim();
+                  final double harga =
+                      double.tryParse(hargaController.text.trim()) ?? 0.0;
+                  final int stok =
+                      int.tryParse(stokController.text.trim()) ?? 0;
+
+                  _addProduct(nama, harga, stok).then((_) {
+                    Navigator.pop(context);
+                    _fetchProduk(); // Refresh data produk setelah menyimpan
+                  });
+                }
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showEditDialog(Map<String, dynamic> product) {
     final TextEditingController namaController =
         TextEditingController(text: product['nama_produk']);
@@ -148,11 +271,6 @@ class _ProdukState extends State<Produk> {
               } else {
                 _showSnackBar('Isi semua field dengan data yang valid!');
               }
-            }),
-            _buildDialogButton('Hapus', () {
-              Navigator.pop(context);
-              _deleteProduk(product['produk_id'])
-                  .then((_) => _fetchProduk()); // Tambahkan di sini
             }),
           ],
         );
@@ -207,6 +325,32 @@ class _ProdukState extends State<Produk> {
     );
   }
 
+  // Fungsi untuk filter produk berdasarkan pencarian
+  void _filterProduk(String query) {
+    setState(() {
+      searchQuery = query;
+      if (query.isEmpty) {
+        filteredProduk =
+            produk; // Jika pencarian kosong, tampilkan semua produk
+      } else {
+        filteredProduk = produk.where((product) {
+          final namaProduk = product['nama_produk'].toString().toLowerCase();
+          return namaProduk
+              .contains(query.toLowerCase()); // Filter produk berdasarkan nama
+        }).toList();
+      }
+    });
+  }
+
+  void _logout() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const Login(),
+      ),
+    );
+  }
+
   // Fungsi untuk menampilkan halaman produk
   @override
   Widget build(BuildContext context) {
@@ -221,29 +365,61 @@ class _ProdukState extends State<Produk> {
           style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF074799),
+            color: const Color(0xFF000957),
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Container(
+              width: 180,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    blurRadius: 6,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: TextField(
+                onChanged: _filterProduk,
+                style: GoogleFonts.poppins(fontSize: 14, color: Colors.black),
+                decoration: InputDecoration(
+                  hintText: 'Cari produk...',
+                  hintStyle:
+                      GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
+                  prefixIcon:
+                      const Icon(Icons.search, color: Color(0xFF074799)),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            color: const Color(0xFF074799),
+            onPressed: _logout,
+          ),
+        ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: produk.length,
+        itemCount: filteredProduk
+            .length, // Gunakan filteredProduk untuk daftar produk yang sudah difilter
         itemBuilder: (context, index) {
-          final product = produk[index];
+          final product = filteredProduk[index];
           return _buildProductCard(product);
         },
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
+      bottomNavigationBar: BottomNavBar(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          // Navigasi ke halaman AddProduk
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddProduk()),
-          );
-
-          // Panggil ulang fetchProduk setelah kembali
-          _fetchProduk();
+        onPressed: () {
+          _showAddProductDialog(); // Panggil dialog untuk menambahkan produk
         },
         backgroundColor: const Color(0xFF074799),
         child: const Icon(Icons.add, color: Colors.white),
@@ -270,11 +446,11 @@ class _ProdukState extends State<Produk> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Nama: ${product['nama_produk'] ?? 'N/A'}',
+                    '${product['nama_produk'] ?? 'N/A'}',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: const Color(0xFF074799),
+                      color: const Color.fromARGB(255, 65, 86, 112),
                     ),
                   ),
                   Text(
@@ -300,64 +476,108 @@ class _ProdukState extends State<Produk> {
                 _showEditDialog(product); // Buka dialog edit
               },
             ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Color(0xFF074799)),
+              onPressed: () {
+                _showDeleteConfirmationDialog(product['produk_id']);
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
-  // Fungsi bottom navigation bar
-  BottomNavigationBar _buildBottomNavBar() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: (index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-        switch (index) {
-          case 0: // Produk
-            // Tetap di halaman ini
-            break;
-          case 1: // Pesanan
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const Pesanan()),
-            );
-            break;
-          case 2: // Riwayat
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const Riwayat()),
-            );
-            break;
-          case 3: // Profil
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const ProfilPage()),
-            );
-            break;
-        }
-      },
-      selectedItemColor: const Color(0xFF074799),
-      unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.store_mall_directory_outlined),
-          label: 'Produk',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.shopping_bag_outlined),
-          label: 'Pesanan',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.history_outlined),
-          label: 'Riwayat',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profil',
-        ),
-      ],
-    );
-  }
+//   Future<bool> _isUserPetugas() async {
+//     final user = supabase.auth.currentUser;
+//     if (user != null) {
+//       final response = await supabase
+//           .from('petugas')
+//           .select('userID')
+//           .eq('userID', user.id)
+//           .single();
+
+//       if (response != null) {
+//         return true; // Pengguna ditemukan di tabel petugas
+//       }
+//     }
+//     return false; // Pengguna tidak ditemukan di tabel petugas
+//   }
+
+// FutureBuilder<bool> _buildBottomNavBar() {
+//   return FutureBuilder<bool>(
+//     future: _isUserPetugas(),  // Mengecek apakah user adalah petugas
+//     builder: (context, snapshot) {
+//       if (snapshot.connectionState == ConnectionState.waiting) {
+//         return const Center(child: CircularProgressIndicator());
+//       }
+
+//       bool isPetugas = snapshot.data ?? false;
+//       List<BottomNavigationBarItem> items = [
+//         BottomNavigationBarItem(
+//           icon: const Icon(Icons.store_mall_directory_outlined),
+//           label: 'Produk',
+//         ),
+//         if (isPetugas) ...[  // Menampilkan Pesanan dan Riwayat hanya jika petugas
+//           BottomNavigationBarItem(
+//             icon: const Icon(Icons.shopping_bag_outlined),
+//             label: 'Pesanan',
+//           ),
+//           BottomNavigationBarItem(
+//             icon: const Icon(Icons.history_outlined),
+//             label: 'Riwayat',
+//           ),
+//         ],
+//         if (!isPetugas)  // Menampilkan Profil hanya jika bukan petugas
+//           BottomNavigationBarItem(
+//             icon: const Icon(Icons.person_outline),
+//             label: 'Profil',
+//           ),
+//       ];
+
+//       return BottomNavigationBar(
+//         currentIndex: _selectedIndex,
+//         onTap: (index) {
+//           setState(() {
+//             _selectedIndex = index;
+//           });
+//           switch (index) {
+//             case 0: // Produk
+//               Navigator.pushReplacement(
+//                   context,
+//                   MaterialPageRoute(builder: (context) => const Produk()),
+//                 );
+//               break;
+//             case 1: // Pesanan (tampil hanya jika petugas)
+//               if (isPetugas) {
+//                 Navigator.pushReplacement(
+//                   context,
+//                   MaterialPageRoute(builder: (context) => const Pesanan()),
+//                 );
+//               }
+//               break;
+//             case 2: // Riwayat (tampil hanya jika petugas)
+//               if (isPetugas) {
+//                 Navigator.pushReplacement(
+//                   context,
+//                   MaterialPageRoute(builder: (context) => const Riwayat()),
+//                 );
+//               }
+//               break;
+//             case 3: // Profil (tampil hanya jika bukan petugas)
+//               if (!isPetugas) {
+//                 Navigator.pushReplacement(
+//                   context,
+//                   MaterialPageRoute(builder: (context) => const ProfilPage()),
+//                 );
+//               }
+//               break;
+//           }
+//         },
+//         selectedItemColor: const Color(0xFF074799),
+//         unselectedItemColor: Colors.grey,
+//         items: items,
+//       );
+//     },
+//   );
 }

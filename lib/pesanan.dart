@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:ukk_coba/checkout.dart';
+// import 'package:ukk_coba/checkout.dart';
 import 'package:ukk_coba/history.dart';
 import 'package:ukk_coba/pelanggan.dart';
 import 'package:ukk_coba/produk.dart';
 import 'package:ukk_coba/profile.dart'; // Pastikan file ini ada
+import 'bottomnavbar.dart';
 
 class Pesanan extends StatefulWidget {
   const Pesanan({Key? key}) : super(key: key);
@@ -32,7 +33,6 @@ class _PesananState extends State<Pesanan> {
   }
 
   Future<void> _fetchProduk() async {
-    //mengambil data produk
     final response = await supabase.from('produk').select();
     if (response != null) {
       setState(() {
@@ -121,10 +121,10 @@ class _PesananState extends State<Pesanan> {
     // Jika tidak ada pelanggan yang dipilih, gunakan pelanggan anonim
     Map<String, dynamic> pelanggan = selectedPelanggan ??
         {
-          'id_pelanggan': 0,
-          'nama_pelanggan': 'User',
-          'alamat': '-',
-          'no_tlp': '-',
+          'pelanggan_id': 0, // ID pelanggan anonim
+          'nama_pelanggan': 'User', // Nama default untuk pelanggan anonim
+          'alamat': '-', // Alamat default
+          'no_tlp': '-', // Nomor telepon default
         };
 
     try {
@@ -132,7 +132,7 @@ class _PesananState extends State<Pesanan> {
       final response = await supabase.from('penjualan').insert({
         'tgl_penjualan': DateTime.now().toIso8601String(),
         'total_harga': totalHarga,
-        'pelanggan_id': pelanggan['pelanggan_id'], // ID pelanggan anonim
+        'pelanggan_id': pelanggan['id_pelanggan'], // ID pelanggan anonim
       }).select();
 
       if (response.isNotEmpty) {
@@ -165,27 +165,21 @@ class _PesananState extends State<Pesanan> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Transaksi berhasil disimpan!'),
-            duration: Duration(seconds: 1), // Set duration to 2 seconds
+            duration: Duration(seconds: 1),
           ),
         );
 
-        //Navigasi ke halaman Checkout
+        // Navigasi ke halaman Riwayat
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const Riwayat() //(
-            //   keranjang: keranjang,
-            //   pelanggan: pelanggan,
-            //   totalHarga: totalHarga,
-            // ),
-          ),
+          MaterialPageRoute(builder: (context) => const Riwayat()),
         );
 
         // Reset data setelah transaksi berhasil
         setState(() {
           keranjang.clear();
           totalHarga = 0.0;
-          selectedPelanggan = null;
+          selectedPelanggan = null; // Reset pilihan pelanggan
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -204,11 +198,11 @@ class _PesananState extends State<Pesanan> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Transaksi Baru',
+          'Pesanan',
           style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF074799),
+            color: const Color(0xFF000957),
           ),
         ),
       ),
@@ -226,7 +220,7 @@ class _PesananState extends State<Pesanan> {
               ),
             ),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<int>(
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.grey.shade200,
@@ -236,47 +230,42 @@ class _PesananState extends State<Pesanan> {
                 ),
               ),
               items: pelangganList.map((pelanggan) {
-                final pelangganFormatted =
-                    '${pelanggan['id_pelanggan']} | ${pelanggan['nama_pelanggan']}';
-                return DropdownMenuItem<String>(
-                  value: pelangganFormatted,
-                  child: Text(pelangganFormatted),
+                return DropdownMenuItem<int>(
+                  value: pelanggan['id_pelanggan'],
+                  child: Text(pelanggan['nama_pelanggan']),
                 );
               }).toList(),
               onChanged: (value) {
                 setState(() {
-                  // Cari pelanggan berdasarkan value yang dipilih
                   selectedPelanggan = pelangganList.firstWhere(
-                    (pelanggan) =>
-                        '${pelanggan['id_pelanggan']} | ${pelanggan['nama_pelanggan']}' ==
-                        value,
+                    (pelanggan) => pelanggan['id_pelanggan'] == value,
                     orElse: () =>
-                        {}, // Mengembalikan map kosong jika tidak ditemukan
+                        {}, // Jika tidak ditemukan, kembalikan map kosong
                   );
                 });
               },
               value: selectedPelanggan != null
-                  ? '${selectedPelanggan!['id_pelanggan']} | ${selectedPelanggan!['nama_pelanggan']}'
+                  ? selectedPelanggan!['id_pelanggan']
                   : null,
             ),
             const SizedBox(height: 8),
             // Tombol untuk tambah pelanggan
-            TextButton.icon(
-              onPressed: () async {
-                // Arahkan ke halaman AddPelanggan dan tunggu hasilnya
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddPelanggan()),
-                );
+            // TextButton.icon(
+            //   onPressed: () async {
+            //     // Arahkan ke halaman AddPelanggan dan tunggu hasilnya
+            //     final result = await Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => const AddPelanggan()),
+            //     );
 
-                // Jika berhasil menambah pelanggan, refresh data pelanggan
-                if (result == true) {
-                  _fetchPelanggan();
-                }
-              },
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('Tambah Pelanggan'),
-            ),
+            //     // Jika berhasil menambah pelanggan, refresh data pelanggan
+            //     if (result == true) {
+            //       _fetchPelanggan();
+            //     }
+            //   },
+            //   icon: const Icon(Icons.add, size: 16),
+            //   label: const Text('Tambah Pelanggan'),
+            // ),
             const SizedBox(height: 16),
             Text(
               'Produk',
@@ -317,34 +306,100 @@ class _PesananState extends State<Pesanan> {
                     keranjang.length, // Jumlah item yang ada di keranjang
                 itemBuilder: (context, index) {
                   final item = keranjang[index]; // Ambil item berdasarkan index
+                  final produkId = item['produk_id']; // ID produk
+                  final produk = produkList.firstWhere(
+                    (p) => p['produk_id'] == produkId,
+                    orElse: () =>
+                        {'harga': 0}, // Jika tidak ditemukan, gunakan harga 0
+                  );
+                  final harga =
+                      produk['harga'] ?? 0; // Menggunakan harga produk
+                  final jumlah = item['jumlah'] ??
+                      0; // Menggunakan jumlah default 0 jika null
+                  final subtotal =
+                      harga * jumlah; // Menghitung subtotal setiap item
+
+                  // Update subtotal untuk setiap item
+                  item['subtotal'] = subtotal;
+
                   return ListTile(
                     title: Text(item['nama_produk']), // Nama produk
                     subtitle: Text(
-                      'Jumlah: ${item['jumlah']} | Subtotal: Rp${item['subtotal']}',
+                      'Jumlah: $jumlah | Subtotal: Rp${subtotal.toStringAsFixed(0)}',
                       style: GoogleFonts.poppins(fontSize: 14),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        setState(() {
-                          totalHarga -= item['subtotal']; // Kurangi harga total
-                          keranjang
-                              .removeAt(index); // Hapus item dari keranjang
-                        });
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Tombol untuk mengurangi jumlah produk
+                        IconButton(
+                          icon: const Icon(Icons.remove, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              if (item['jumlah'] > 1) {
+                                item['jumlah']--;
+                                item['subtotal'] =
+                                    item['jumlah'] * harga; // Update subtotal
+                                totalHarga -= harga; // Update totalHarga
+                              } else {
+                                totalHarga -=
+                                    item['subtotal']; // Kurangi total harga
+                                keranjang.removeAt(
+                                    index); // Hapus item jika jumlah = 0
+                              }
+                            });
+                          },
+                        ),
+                        // Menampilkan jumlah produk
+                        Text(item['jumlah'].toString()),
+                        // Tombol untuk menambah jumlah produk
+                        IconButton(
+                          icon: const Icon(Icons.add, color: Colors.green),
+                          onPressed: () {
+                            final stokProduk =
+                                produk['stok'] ?? 0; // Cek stok produk
+                            if (item['jumlah'] < stokProduk) {
+                              setState(() {
+                                item['jumlah']++;
+                                item['subtotal'] =
+                                    item['jumlah'] * harga; // Update subtotal
+                                totalHarga += harga; // Update totalHarga
+                              });
+                            } else {
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(const SnackBar(
+                                content: Text('Stok tidak mencukupi!'),
+                              ));
+                            }
+                          },
+                        ),
+                        // Tombol untuk menghapus produk dari keranjang
+                        IconButton(
+                          icon: const Icon(Icons.delete,
+                              color: Color.fromARGB(255, 249, 0, 0)),
+                          onPressed: () {
+                            setState(() {
+                              totalHarga -=
+                                  item['subtotal']; // Kurangi total harga
+                              keranjang
+                                  .removeAt(index); // Hapus item dari keranjang
+                            });
+                          },
+                        ),
+                      ],
                     ),
                   );
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            // Bagian untuk menampilkan total harga
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Total: Rp$totalHarga', // Menampilkan total harga
+                  'Total: Rp${totalHarga.toStringAsFixed(0)}', // Menampilkan total harga
                   style: GoogleFonts.poppins(
-                    fontSize: 20, 
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -367,62 +422,7 @@ class _PesananState extends State<Pesanan> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
-    );
-  }
-
-  BottomNavigationBar _buildBottomNavBar() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: (index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-        switch (index) {
-          case 0: // Produk
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const Produk()),
-            );
-            break;
-          case 1: // Pesanan
-            // Tetap di halaman ini
-            break;
-          case 2: // Riwayat
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const Riwayat()),
-            );
-            break;
-          case 3: // Profile
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const ProfilPage()),
-            );
-            break;
-        }
-      },
-      selectedItemColor:
-          const Color(0xFF074799), // Warna untuk ikon yang dipilih
-      unselectedItemColor: Colors.grey, // Warna untuk ikon yang tidak dipilih
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.store_mall_directory_outlined),
-          label: 'Produk',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.shopping_bag_outlined),
-          label: 'Pesanan',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.history_outlined),
-          label: 'Riwayat',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profil',
-        ),
-      ],
+      bottomNavigationBar: BottomNavBar(),
     );
   }
 }

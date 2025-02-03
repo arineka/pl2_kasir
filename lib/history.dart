@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ukk_coba/pesanan.dart';
 import 'package:ukk_coba/produk.dart';
 import 'package:ukk_coba/profile.dart';
-
+import 'bottomnavbar.dart';
 class Riwayat extends StatefulWidget {
   const Riwayat({super.key});
 
@@ -27,31 +27,32 @@ class _RiwayatState extends State<Riwayat> {
     try {
       final supabase = Supabase.instance.client;
 
-      // Ambil data dari tabel 'penjualan' beserta nama pelanggan
+      // Ambil data dari tabel 'penjualan' beserta nama pelanggan, diurutkan dari yang terbaru
       final penjualanResponse = await supabase
           .from('penjualan')
           .select('*, pelanggan(nama_pelanggan)')
-          .order('tgl_penjualan');
+          .order('tgl_penjualan', ascending: false) // Urutkan dari yang terbaru
+          .order('penjualan_id',
+              ascending: false); // Pastikan urutan berdasarkan ID terbaru
 
       if (penjualanResponse.isNotEmpty) {
         final futures = penjualanResponse.map((penjualan) async {
           final detailResponse = await supabase
               .from('detail_penjualan')
               .select('*, produk(nama_produk)')
-              .eq('penjualan_id', penjualan['penjualan_id']);
+              .eq('penjualan_id', penjualan['penjualan_id'])
+              .order('detail_id',
+                  ascending:
+                      false); // Pastikan produk juga terurut dari yang terbaru
 
-          if (detailResponse.isNotEmpty) {
-            return {
-              'penjualan': penjualan,
-              'details': detailResponse,
-            };
-          }
-          return null;
+          return {
+            'penjualan': penjualan,
+            'details': detailResponse,
+          };
         }).toList();
 
         final results = await Future.wait(futures);
 
-        // Filter data null dan tambahkan ke transaksiList
         setState(() {
           transaksiList = results
               .where((result) => result != null)
@@ -83,10 +84,7 @@ class _RiwayatState extends State<Riwayat> {
           .eq('penjualan_id', penjualanId);
 
       // Hapus data di penjualan berdasarkan penjualan_id
-      await supabase
-          .from('penjualan')
-          .delete()
-          .eq('penjualan_id', penjualanId);
+      await supabase.from('penjualan').delete().eq('penjualan_id', penjualanId);
 
       // Setelah penghapusan, refresh daftar riwayat transaksi
       refreshRiwayat();
@@ -111,7 +109,7 @@ class _RiwayatState extends State<Riwayat> {
           style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF074799),
+            color: const Color(0xFF000957),
           ),
         ),
       ),
@@ -127,6 +125,11 @@ class _RiwayatState extends State<Riwayat> {
                   final penjualan = transaksi['penjualan'];
                   final details = transaksi['details'];
 
+                  // Mengambil nama pelanggan dari relasi 'pelanggan'
+                  final namaPelanggan = penjualan['pelanggan'] != null
+                      ? penjualan['pelanggan']['nama_pelanggan']
+                      : 'User';
+
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16),
                     elevation: 4,
@@ -138,6 +141,17 @@ class _RiwayatState extends State<Riwayat> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Menampilkan Nama Pelanggan
+                          Text(
+                            'Pelanggan: $namaPelanggan',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF074799),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
                           // Header Transaksi
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -145,7 +159,6 @@ class _RiwayatState extends State<Riwayat> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-
                                   Text(
                                     'Tanggal: ${penjualan['tgl_penjualan']}',
                                     style: GoogleFonts.poppins(
@@ -181,29 +194,31 @@ class _RiwayatState extends State<Riwayat> {
                                   : 'Produk tidak ditemukan';
 
                               return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 4), // Spasi antar produk
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Produk: $namaProduk',
+                                    // Menampilkan label "Produk :" hanya untuk produk pertama
+                                    if (detailIndex == 0)
+                                      Text(
+                                        'Produk :',
                                         style: GoogleFonts.poppins(
                                           fontSize: 13,
-                                          fontWeight: FontWeight.w500,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    ),
+                                    const SizedBox(height: 5),
                                     Text(
-                                      'Jumlah: ${detail['jumlah_produk']}',
+                                      '$namaProduk | ${detail['jumlah_produk']}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
-                                        fontWeight: FontWeight.w400,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(height: 5),
                                     Text(
-                                      'Subtotal: Rp ${detail['subtotal'].toStringAsFixed(0)}',
+                                      'Total : Rp ${detail['subtotal'].toStringAsFixed(0)}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
@@ -237,7 +252,8 @@ class _RiwayatState extends State<Riwayat> {
                                     TextButton(
                                       onPressed: () {
                                         // Menghapus transaksi
-                                        deleteRiwayat(penjualan['penjualan_id']);
+                                        deleteRiwayat(
+                                            penjualan['penjualan_id']);
                                         Navigator.pop(context); // Tutup dialog
                                       },
                                       child: const Text('Hapus'),
@@ -260,66 +276,8 @@ class _RiwayatState extends State<Riwayat> {
                 },
               ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
+      bottomNavigationBar: BottomNavBar(),
     );
   }
 
-  BottomNavigationBar _buildBottomNavBar() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: (index) {
-        if (_selectedIndex != index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-
-          switch (index) {
-            case 0:
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const Produk()),
-                (Route<dynamic> route) => false,
-              );
-              break;
-            case 1:
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const Pesanan()),
-                (Route<dynamic> route) => false,
-              );
-              break;
-            case 2:
-              break;
-            case 3:
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilPage()),
-                (Route<dynamic> route) => false,
-              );
-              break;
-          }
-        }
-      },
-      selectedItemColor: const Color(0xFF074799),
-      unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.store_mall_directory_outlined),
-          label: 'Produk',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.shopping_bag_outlined),
-          label: 'Pesanan',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.history_outlined),
-          label: 'Riwayat',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profil',
-        ),
-      ],
-    );
-  }
 }
