@@ -149,38 +149,38 @@ class _ProfilPageState extends State<ProfilPage> {
     }
   }
 
-  void _logout() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const Login(),
-      ),
-    );
-  }
+  // void _logout() {
+  //   Navigator.pushReplacement(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => const Lo(),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FC),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Daftar Pelanggan',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
-            color: Color(0xFF074799),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded),
-            color: const Color(0xFF074799),
-            onPressed: _logout,
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   automaticallyImplyLeading: false,
+      //   title: const Text(
+      //     'Daftar Pelanggan',
+      //     style: TextStyle(
+      //       fontSize: 24,
+      //       fontWeight: FontWeight.w600,
+      //       fontFamily: 'Poppins',
+      //       color: Color(0xFF074799),
+      //     ),
+      //   ),
+      //   // actions: [
+      //   //   IconButton(
+      //   //     icon: const Icon(Icons.logout_rounded),
+      //   //     color: const Color(0xFF074799),
+      //   //     onPressed: _logout,
+      //   //   ),
+      //   // ],
+      // ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -257,7 +257,7 @@ class _ProfilPageState extends State<ProfilPage> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavBar(),
+      // bottomNavigationBar: BottomNavBar(),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddPelangganDialog,
         child: const Icon(Icons.add, color: Colors.white),

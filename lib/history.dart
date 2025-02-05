@@ -102,17 +102,17 @@ class _RiwayatState extends State<Riwayat> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FC),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Text(
-          'Riwayat Transaksi',
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF000957),
-          ),
-        ),
-      ),
+      // appBar: AppBar(
+      //   automaticallyImplyLeading: false,
+      //   title: Text(
+      //     'Riwayat Transaksi',
+      //     style: GoogleFonts.poppins(
+      //       fontSize: 24,
+      //       fontWeight: FontWeight.w600,
+      //       color: const Color(0xFF000957),
+      //     ),
+      //   ),
+      // ),
       body: RefreshIndicator(
         onRefresh: refreshRiwayat, // Menyegarkan data dengan geser ke bawah
         child: transaksiList.isEmpty
@@ -276,7 +276,7 @@ class _RiwayatState extends State<Riwayat> {
                 },
               ),
       ),
-      bottomNavigationBar: BottomNavBar(),
+      // bottomNavigationBar: BottomNavBar(),
     );
   }
 

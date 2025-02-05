@@ -196,16 +196,16 @@ class _PesananState extends State<Pesanan> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Pesanan',
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF000957),
-          ),
-        ),
-      ),
+      // appBar: AppBar(
+      //   title: Text(
+      //     'Pesanan',
+      //     style: GoogleFonts.poppins(
+      //       fontSize: 24,
+      //       fontWeight: FontWeight.w600,
+      //       color: const Color(0xFF000957),
+      //     ),
+      //   ),
+      // ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -422,7 +422,7 @@ class _PesananState extends State<Pesanan> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavBar(),
+      // bottomNavigationBar: BottomNavBar(),
     );
   }
 }

@@ -5,7 +5,7 @@ import 'package:ukk_coba/history.dart';
 import 'package:ukk_coba/login.dart';
 import 'pesanan.dart'; // Pastikan untuk mengimpor halaman lain jika diperlukan
 import 'profile.dart'; // Pastikan untuk mengimpor halaman lain jika diperlukan
-import 'bottomnavbar.dart';
+// import 'bottomnavbar.dart';
 
 class FlutterVizBottomNavigationBarModel {
   final IconData icon;
@@ -356,24 +356,33 @@ class _ProdukState extends State<Produk> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FC),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        automaticallyImplyLeading: false,
-        title: Text(
-          'Dashboard Produk',
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF000957),
-          ),
-        ),
-        actions: [
+      // appBar: AppBar(
+      //   elevation: 0,
+      //   backgroundColor: Colors.transparent,
+      //   automaticallyImplyLeading: false,
+      //   title: Text(
+      //     'Dashboard Produk',
+      //     style: GoogleFonts.poppins(
+      //       fontSize: 24,
+      //       fontWeight: FontWeight.w600,
+      //       color: const Color(0xFF000957),
+      //     ),
+      //   ),
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.logout_rounded),
+      //       color: const Color(0xFF074799),
+      //       onPressed: _logout,
+      //     ),
+      //   ],
+      // ),
+      body: Column(
+        children: [
+          // TextField untuk pencarian
           Padding(
-            padding: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.all(16.0),
             child: Container(
-              width: 180,
-              height: 40,
+              width: double.infinity, // Memastikan lebar penuh
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
@@ -400,23 +409,21 @@ class _ProdukState extends State<Produk> {
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded),
-            color: const Color(0xFF074799),
-            onPressed: _logout,
+          // Daftar produk
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: filteredProduk
+                  .length, // Gunakan filteredProduk untuk daftar produk yang sudah difilter
+              itemBuilder: (context, index) {
+                final product = filteredProduk[index];
+                return _buildProductCard(product);
+              },
+            ),
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: filteredProduk
-            .length, // Gunakan filteredProduk untuk daftar produk yang sudah difilter
-        itemBuilder: (context, index) {
-          final product = filteredProduk[index];
-          return _buildProductCard(product);
-        },
-      ),
-      bottomNavigationBar: BottomNavBar(),
+      // bottomNavigationBar: (),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showAddProductDialog(); // Panggil dialog untuk menambahkan produk

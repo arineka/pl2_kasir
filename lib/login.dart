@@ -1,51 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; // Untuk menggunakan font khusus dari Google Fonts.
-import 'package:supabase_flutter/supabase_flutter.dart'; // Library Supabase untuk autentikasi.
-import 'package:ukk_coba/produk.dart'; // Halaman yang akan dituju setelah login berhasil.
+import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ukk_coba/main.dart';
+import 'package:ukk_coba/produk.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Tambahkan dependency shared_preferences
 
 class Login extends StatefulWidget {
   const Login({super.key});
 
   @override
-  State<Login> createState() => _LoginState();
+  State<Login> createState() => _LoginPageState();
 }
 
-class _LoginState extends State<Login> {
-  final TextEditingController _emailController = TextEditingController();
+class _LoginPageState extends State<Login> {
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _isPasswordVisible = false; // Untuk mengontrol visibilitas password
+  bool _isLoading = false; // Untuk mengontrol loading state
 
-  bool _isLoading = false;
-  bool _isPasswordVisible = false;
+  final SupabaseClient supabase = Supabase.instance.client;
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
+    final String username = _usernameController.text.trim();
+    final String password = _passwordController.text.trim();
 
     try {
-      final response = await Supabase.instance.client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      // Query ke Supabase untuk validasi user
+      final response = await supabase
+          .from('users')
+          .select()
+          .eq('username', username)
+          .eq('password', password)
+          .maybeSingle();
 
-      if (response.session != null) {
-        _showSnackBar('Login berhasil!');
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const Produk()),
+      if (response != null) {
+        // Simpan role ke SharedPreferences
+        final role = response['role'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('username', response['username']); // Simpan username
+        await prefs.setString('role', role); // Simpan role
+
+        // Login berhasil, langsung arahkan ke halaman utama
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainPage()),
         );
       } else {
-        _showSnackBar('Login gagal. Periksa email dan password Anda!');
+        // Login gagal
+        _showSnackBar('Invalid username or password');
       }
-    } catch (error) {
-      _showSnackBar('Error: ${error.toString()}');
+    } catch (e) {
+      _showSnackBar('An error occurred: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -60,6 +71,13 @@ class _LoginState extends State<Login> {
   }
 
   @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -67,7 +85,6 @@ class _LoginState extends State<Login> {
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Form(
-            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -81,61 +98,73 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 const SizedBox(height: 5),
-                RichText(
-                  text: TextSpan(
-                    children: <InlineSpan>[
-                      TextSpan(
-                        text: 'Halaman Login ',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      TextSpan(
-                        text: 'Kasir',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
+                Text(
+                  'Silakan login dengan username dan password Anda.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.grey,
                   ),
                 ),
                 const SizedBox(height: 50),
-                Text("Email", style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: const Color(0xFF074799))),
+                Text("Username",
+                    style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF074799))),
                 TextFormField(
-                  controller: _emailController,
-                  validator: (value) => value!.isEmpty ? 'Isi bagian email' : null,
+                  controller: _usernameController,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Isi bagian username' : null,
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.person, color: Color(0xFF074799)),
-                    hintText: "masukkan email",
-                    hintStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w400, color: Colors.grey),
-                    border: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    prefixIcon:
+                        const Icon(Icons.person, color: Color(0xFF074799)),
+                    hintText: "Masukkan username",
+                    hintStyle: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey),
+                    border: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text("Password", style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: const Color(0xFF074799))),
+                Text("Password",
+                    style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF074799))),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
-                  validator: (value) => value!.isEmpty ? 'Isi bagian password' : null,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Isi bagian password' : null,
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.lock, color: Color(0xFF074799)),
+                    prefixIcon:
+                        const Icon(Icons.lock, color: Color(0xFF074799)),
                     suffixIcon: IconButton(
-                      icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: const Color(0xFF074799)),
+                      icon: Icon(
+                          _isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: const Color(0xFF074799)),
                       onPressed: () {
                         setState(() {
                           _isPasswordVisible = !_isPasswordVisible;
                         });
                       },
                     ),
-                    hintText: "masukkan password",
-                    hintStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w400, color: Colors.grey),
-                    border: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    hintText: "Masukkan password",
+                    hintStyle: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey),
+                    border: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                   ),
                 ),
                 const SizedBox(height: 70),
@@ -146,9 +175,16 @@ class _LoginState extends State<Login> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF074799),
                       padding: const EdgeInsets.symmetric(vertical: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28)),
                     ),
-                    child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : Text("Login", style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w500, color: Colors.white)),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text("Login",
+                            style: GoogleFonts.poppins(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white)),
                   ),
                 ),
               ],
@@ -157,12 +193,5 @@ class _LoginState extends State<Login> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
   }
 }
