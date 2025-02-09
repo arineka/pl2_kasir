@@ -15,9 +15,9 @@ Future<void> main() async {
 
   // Inisialisasi Supabase.
   await Supabase.initialize(
-    url: 'https://rboyfzrwbznmltknjjtv.supabase.co',
+    url: 'https://bbohoplmzyobhlhklkrt.supabase.co',
     anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJib3lmenJ3YnpubWx0a25qanR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYxMjk3MzIsImV4cCI6MjA1MTcwNTczMn0.GV01DAMYB6txz7dK-q2ERwRu5jeHfnzRrBaL3qvrAH4',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib2hvcGxtenlvYmhsaGtsa3J0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg4NTAwNTYsImV4cCI6MjA1NDQyNjA1Nn0.pbFqHZhU1VDq0JKKmiEBI44yWKDgZEO52bbvqLM4N2Q',
   );
 
   runApp(const MyApp()); // Menjalankan aplikasi.
@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: false,
       ),
       debugShowCheckedModeBanner: false,
-      home: const MainPage(), // Halaman utama langsung
+      home: const Produk(), // Halaman utama langsung
     );
   }
 }
